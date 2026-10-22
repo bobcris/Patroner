@@ -1,0 +1,16 @@
+{
+  "name": "patroner-prototype",
+  "version": "1.30.0",
+  "private": true,
+  "description": "Rule-driven pattern drafting prototype with server-side OpenRouter free-model vision analysis and quota safeguards",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "start:local": "node server.js",
+    "test": "node tests/drafting-engine.test.js && node tests/check-inline-script.js && node tests/server.test.js",
+    "configure": "node configure-key.js",
+    "configure:cloud": "node configure-cloud.js"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  }
+}

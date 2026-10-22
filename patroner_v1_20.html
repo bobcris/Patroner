@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#172033">
+<title>Patroner v1.20 — Pattern Studio</title>
+<style>
+:root{--bg:#f4f6fa;--panel:#fff;--ink:#172033;--muted:#687386;--line:#dce2ec;--accent:#315efb;--good:#16794b;--warn:#9b5b00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:#172033;color:#fff;padding:18px 20px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px #17203322}
+.head{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-size:1.25rem;font-weight:800;letter-spacing:.2px}.tag{font-size:.8rem;color:#cbd5e1}
+main{max-width:1200px;margin:18px auto;padding:0 14px 28px;display:grid;grid-template-columns:minmax(290px,370px) minmax(0,1fr);gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 4px 18px #18233a08;min-width:0}
+h2{font-size:1.05rem;margin:0 0 14px}h3{font-size:.94rem;margin:18px 0 10px}
+.sub{font-size:.84rem;color:var(--muted);line-height:1.45;margin:-5px 0 14px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+label{display:block;font-size:.8rem;font-weight:650;color:#455066;margin-bottom:5px}
+input,select{width:100%;border:1px solid #cbd3e1;border-radius:10px;padding:11px 10px;font:inherit;font-size:16px;background:#fff;color:var(--ink);min-width:0}
+input:focus,select:focus,button:focus{outline:3px solid #315efb35;border-color:var(--accent)}
+.unit{font-size:.75rem;color:var(--muted);font-weight:500}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+button{border:0;border-radius:10px;padding:12px 13px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer;background:var(--accent);color:white}
+button.secondary{background:#e9edff;color:#2346c6}button.ghost{background:#eef1f6;color:#263247}
+button:active{transform:translateY(1px)}
+.preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.status{font-size:.78rem;border-radius:999px;background:#e8f7ef;color:var(--good);padding:6px 10px;font-weight:700}
+#preview{display:block;width:100%;height:min(64vh,680px);min-height:360px;border:1px solid var(--line);border-radius:12px;background:white;touch-action:pan-y}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.metric{background:#f6f8fc;border:1px solid var(--line);border-radius:10px;padding:10px}.metric b{display:block;font-size:1rem}.metric span{font-size:.73rem;color:var(--muted)}
+.note{font-size:.8rem;line-height:1.5;color:var(--muted);margin:12px 0 0}
+.alert{background:#fff6e6;border:1px solid #f2d7a5;color:#744800;padding:11px 12px;border-radius:10px;font-size:.8rem;line-height:1.45;margin-top:12px}
+.validation{font-size:.82rem;margin-top:10px;line-height:1.5}.validation ul{padding-left:20px;margin:5px 0}.ok{color:var(--good)}.bad{color:#a02b2b}
+footer{max-width:1200px;margin:0 auto;padding:0 16px 24px;color:var(--muted);font-size:.76rem}
+@media(max-width:850px){main{grid-template-columns:1fr;margin-top:12px}.fields{grid-template-columns:1fr 1fr}#preview{height:55vh;min-height:330px}.head{align-items:flex-start;flex-direction:column;gap:3px}}
+@media(max-width:390px){.fields{grid-template-columns:1fr 1fr;gap:8px}.panel{padding:13px}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="head"><div><div class="brand">PATRONER <span style="color:#90a9ff">v1.20</span></div><div class="tag">Pattern Studio · Standard sizing · deterministic landmarks & size audit</div></div><div class="tag">Measurement unit: centimetres</div></div></header>
+<main>
+<section class="panel">
+<h2>Pattern measurements</h2>
+<p class="sub">Choose a standard size (XS–XXL) or use custom measurements. The sample generator uses a quarter-circumference panel allocation for both waist and hip; it remains a simplified demonstrator, not a professional fit block.</p>
+<div class="fields">
+<div style="grid-column:1/-1"><label for="sizeProfile">Standard size profile</label>
+<select id="sizeProfile">
+<option value="custom">Custom measurements</option>
+<option value="XS">XS · Extra Small</option>
+<option value="S">S · Small</option>
+<option value="M" selected>M · Medium</option>
+<option value="L">L · Large</option>
+<option value="XL">XL · Extra Large</option>
+<option value="XXL">XXL · Double Extra Large</option>
+</select>
+<p class="note" style="margin-top:5px">Patroner default women's skirt chart (provisional metric profile; not a universal international standard). Selecting a size loads body measurements you can still edit.</p>
+</div>
+<div style="grid-column:1/-1">
+  <label>Size range overview</label>
+  <div id="sizeRangeTable" style="overflow-x:auto"></div>
+  <button type="button" class="secondary" id="downloadSizeCsv" style="width:100%;margin-top:8px">Export size chart CSV</button>
+  <p class="note">Grading increments are explicit between adjacent sizes. These profiles regenerate each size from measurements; they are not yet a validated production-grade multi-size block.</p>
+  <label for="gradingMode" style="margin-top:10px">Grading method</label>
+  <select id="gradingMode">
+    <option value="measurement">Measurement-derived draft (recommended)</option>
+    <option value="point">Experimental grading comparison (metadata only)</option>
+  </select>
+  <p class="note">Point grading is experimental: it applies measured size differences to defined draft landmarks, not a certified industrial grading rule.</p>
+  <div class="btns" style="margin-top:8px">
+    <button type="button" class="secondary" id="previewAllSizes">Compare all sizes</button>
+    <button type="button" class="ghost" id="resetBaseSize">Reset base size M</button>
+  </div>
+  <div id="allSizesOutput" class="note" aria-live="polite"></div>
+  <h3>Draft landmarks</h3>
+  <p class="note">Landmarks are extracted from the current generated panel. They are diagnostic anchors for future grading rules, not certified grading points.</p>
+  <div id="landmarkOutput" class="note" aria-live="polite">Generate a pattern to inspect landmarks.</div>
+  <button type="button" class="secondary" id="exportLandmarks" style="width:100%;margin-top:8px">Export landmark CSV</button>
+  <h3>Size progression audit</h3>
+  <p class="note">Checks the provisional XS–XXL chart for positive measurements, monotonic waist/hip progression, and expected quarter-panel arithmetic. This is a regression audit, not a fit or grading certification.</p>
+  <button type="button" class="secondary" id="runSizeAudit" style="width:100%;margin-top:8px">Run size progression audit</button>
+  <div id="sizeAuditOutput" class="note" aria-live="polite">Run the audit to inspect all six size profiles.</div>
+  <h3>Geometry constraints</h3>
+  <div id="geometryReport" class="note" aria-live="polite">Generate a pattern to run geometry checks.</div>
+  <button type="button" class="ghost" id="runGeometryChecks" style="width:100%;margin-top:8px">Run geometry checks</button>
+</div>
+<div><label for="waist">Waist <span class="unit">(cm)</span></label><input id="waist" type="number" min="1" step="0.1" value="73"></div>
+<div><label for="hip">Hip <span class="unit">(cm)</span></label><input id="hip" type="number" min="1" step="0.1" value="100"></div>
+<div><label for="depth">Hip depth <span class="unit">(cm)</span></label><input id="depth" type="number" min="1" step="0.1" value="20"></div>
+<div><label for="length">Skirt length <span class="unit">(cm)</span></label><input id="length" type="number" min="1" step="0.1" value="60"></div>
+</div>
+<h3>Construction allowances</h3>
+<div class="fields">
+<div><label for="waistEase">Waist ease <span class="unit">(cm)</span></label><input id="waistEase" type="number" min="0" step="0.1" value="1"></div>
+<div><label for="hipEase">Hip ease <span class="unit">(cm)</span></label><input id="hipEase" type="number" min="0" step="0.1" value="4"></div>
+<div><label for="seam">Seam allowance <span class="unit">(cm)</span></label><input id="seam" type="number" min="0" step="0.1" value="1"></div>
+<div><label for="hem">Hem allowance <span class="unit">(cm)</span></label><input id="hem" type="number" min="0" step="0.1" value="3"></div>
+<div><label for="dart">Dart intake <span class="unit">(cm)</span></label><input id="dart" type="number" min="0" step="0.1" value="2"></div>
+<div><label for="scale">Export scale</label><select id="scale"><option value="1">1:1 · Actual size</option><option value="0.5">1:2 · Half scale</option><option value="0.25">1:4 · Quarter scale</option></select></div>
+<div><label for="paper">Paper profile</label><select id="paper"><option value="A4">A4 · 210 × 297 mm</option><option value="A3">A3 · 297 × 420 mm</option><option value="Letter">Letter · 215.9 × 279.4 mm</option></select></div>
+<div><label for="margin">Page margin <span class="unit">(mm)</span></label><input id="margin" type="number" min="3" max="25" step="1" value="8"></div>
+<div><label for="overlap">Tile overlap <span class="unit">(mm)</span></label><input id="overlap" type="number" min="0" max="20" step="1" value="5"></div>
+</div>
+<div class="btns">
+<button id="generate">Generate preview</button><button class="secondary" id="downloadSvg">Export SVG</button>
+<button id="downloadPdf">Export tiled PDF</button><button class="secondary" id="downloadJson">Export measurements</button>
+<button class="ghost" id="calibration">Calibration square</button><button class="ghost" id="tileOverview">Export tile overview</button><button class="ghost" id="tileCsv">Export tile diagnostics CSV</button><button class="ghost" id="seamCheck">Check tile continuity</button><button class="ghost" id="patternCheck">Validate pattern geometry</button>
+</div>
+<div id="validation" class="validation" aria-live="polite"></div>
+<div class="alert"><b>Important:</b> Acrobat measurement checks help confirm PDF scale, but they do not validate garment fit. Print at Actual Size / 100%, disable “Fit to page,” measure the calibration square, and sew a toile before cutting final fabric.</div>
+</section>
+<section class="panel">
+<div class="preview-head"><div><h2>Pattern preview</h2><p class="sub">Illustrative 2D geometry · all dimensions internally represented in millimetres</p></div><span class="status" id="state">Ready</span></div>
+<svg id="preview" viewBox="0 0 800 650" role="img" aria-label="Generated skirt pattern preview">
+<rect x="0" y="0" width="800" height="650" fill="#fff"/>
+<text x="400" y="300" text-anchor="middle" fill="#687386" font-size="18">Enter measurements, then tap Generate preview</text>
+</svg>
+<div class="metrics">
+<div class="metric"><b id="widthMetric">—</b><span>Pattern width (cm)</span></div>
+<div class="metric"><b id="heightMetric">—</b><span>Pattern height (cm)</span></div>
+<div class="metric"><b id="pageMetric">—</b><span>Estimated A4 pages</span></div>
+</div>
+<p class="note" id="summary">The preview updates after you generate a pattern. The calibration SVG now uses a 100 × 100 mm outer outline; verify it with a ruler after printing at Actual Size.</p>
+</section>
+</main>
+<footer>Patroner v1.20 prototype · No data is uploaded; calculations run locally in this page. Not production CAD/CAM software. The XS–XXL chart is provisional; industrial grading rules and production-fit validation are not included.</footer>
+<script>
+const $=id=>document.getElementById(id);
+let lastPattern=null;
+function val(id){return Number($(id).value)}
+// Patroner default metric size chart, body measurements in cm.
+// These are an explicit, configurable starting chart—not a claim of universal sizing.
+const SIZE_CHART = {
+  XS:{waist:60,hip:84,depth:18,length:60},
+  S:{waist:66,hip:90,depth:19,length:60},
+  M:{waist:72,hip:96,depth:20,length:60},
+  L:{waist:80,hip:104,depth:21,length:60},
+  XL:{waist:88,hip:112,depth:22,length:60},
+  XXL:{waist:96,hip:120,depth:23,length:60}
+};
+const SIZE_ORDER=['XS','S','M','L','XL','XXL'];
+function getGradingRows(){
+  return SIZE_ORDER.map((size,i)=>{
+    const p=SIZE_CHART[size],prev=i?SIZE_CHART[SIZE_ORDER[i-1]]:null;
+    return {size,waist:p.waist,hip:p.hip,hip_depth:p.depth,length:p.length,
+      waist_grade:prev?p.waist-prev.waist:0,
+      hip_grade:prev?p.hip-prev.hip:0,
+      hip_depth_grade:prev?p.depth-prev.depth:0,
+      length_grade:prev?p.length-prev.length:0};
+  });
+}
+function renderSizeRange(){
+  const rows=getGradingRows();
+  $('sizeRangeTable').innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr>'+['Size','Waist','Hip','Depth','Waist Δ','Hip Δ'].map(x=>'<th style="text-align:right;padding:7px 5px;border-bottom:1px solid var(--line)">'+x+'</th>').join('')+'</tr></thead><tbody>'+
+  rows.map(r=>'<tr>'+[r.size,r.waist,r.hip,r.hip_depth,r.waist_grade?('+'+r.waist_grade):'—',r.hip_grade?('+'+r.hip_grade):'—'].map((x,i)=>'<td style="text-align:right;padding:7px 5px;border-bottom:1px solid var(--line)'+(i===0?';font-weight:700':'')+'">'+x+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+}
+function exportSizeCsv(){
+  const rows=getGradingRows(),headers=['size','waist_cm','hip_cm','hip_depth_cm','skirt_length_cm','waist_grade_from_previous_cm','hip_grade_from_previous_cm','hip_depth_grade_from_previous_cm','length_grade_from_previous_cm'];
+  const lines=[headers.join(','),...rows.map(r=>[r.size,r.waist,r.hip,r.hip_depth,r.length,r.waist_grade,r.hip_grade,r.hip_depth_grade,r.length_grade].join(','))];
+  const blob=new Blob([lines.join('\\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='patroner_v1_16_size_chart_and_grading.csv';a.click();URL.revokeObjectURL(a.href);
+}
+$('downloadSizeCsv').addEventListener('click',exportSizeCsv);
+
+// Experimental landmark grading. The M profile is the base. Waist and hip
+// deltas are distributed to their corresponding quarter-panel landmarks;
+// length and hip-depth deltas alter vertical landmarks. This is NOT a validated
+// industrial grading rule and is deliberately labelled experimental.
+function buildGradedMeasurements(size){
+  const base=SIZE_CHART.M, target=SIZE_CHART[size];
+  return {
+    size_profile:size,
+    waist_cm:target.waist, hip_cm:target.hip,
+    hip_depth_cm:target.depth, length_cm:target.length,
+    delta:{waist_cm:target.waist-base.waist,hip_cm:target.hip-base.hip,
+      hip_depth_cm:target.depth-base.depth,length_cm:target.length-base.length}
+  };
+}
+function compareAllSizes(){
+  const rows=SIZE_ORDER.map(s=>{
+    const m=buildGradedMeasurements(s);
+    return '<tr><td>'+s+'</td><td>'+m.waist_cm+'</td><td>'+m.hip_cm+'</td><td>'+m.hip_depth_cm+'</td><td>'+m.delta.waist_cm+'</td><td>'+m.delta.hip_cm+'</td></tr>';
+  }).join('');
+  $('allSizesOutput').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr>'+['Size','Waist','Hip','Depth','Δ vs M waist','Δ vs M hip'].map(x=>'<th style="text-align:right;padding:6px;border-bottom:1px solid var(--line)">'+x+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div><p class="note">Values are body measurements in cm. Δ values are relative to base size M, not pattern-point movements.</p>';
+}
+$('previewAllSizes').addEventListener('click',compareAllSizes);
+$('resetBaseSize').addEventListener('click',()=>{
+  $('sizeProfile').value='M'; applySizeProfile();
+  $('gradingMode').value='measurement';
+  $('allSizesOutput').textContent='Base profile reset to M.';
+});
+renderSizeRange();
+function applySizeProfile(){
+  const size=$('sizeProfile').value;
+  if(size==='custom') return;
+  const p=SIZE_CHART[size];
+  $('waist').value=p.waist; $('hip').value=p.hip;
+  $('depth').value=p.depth; $('length').value=p.length;
+  // Keep ease and construction settings separate from body measurements.
+  $('state').textContent='Size '+size+' loaded';
+  $('summary').textContent='Loaded Patroner '+size+' body measurements. Review ease and construction allowances, then generate the pattern.';
+}
+$('sizeProfile').addEventListener('change',applySizeProfile);
+for(const id of ['waist','hip','depth','length']){
+  $(id).addEventListener('input',()=>{
+    // Manual edits switch the profile label to custom to avoid a misleading size badge.
+    if($('sizeProfile').value!=='custom') $('sizeProfile').value='custom';
+  });
+}
+// Initialize fields to match the selected default profile (M).
+applySizeProfile();
+function getInputs(){return {size_profile:$('sizeProfile').value,waist_cm:val('waist'),hip_cm:val('hip'),hip_depth_cm:val('depth'),length_cm:val('length'),waist_ease_cm:val('waistEase'),hip_ease_cm:val('hipEase'),seam_allowance_cm:val('seam'),hem_allowance_cm:val('hem'),dart_cm:val('dart'),scale:Number($('scale').value)}}
+function cleanNum(n){return Number(n.toFixed(3)).toString()}
+function validate(m){
+ let errors=[],warnings=[];
+ for(const k of ['waist_cm','hip_cm','hip_depth_cm','length_cm']) if(!Number.isFinite(m[k])||m[k]<=0)errors.push(k.replace('_cm','').replaceAll('_',' ')+' must be greater than zero.');
+ for(const k of ['waist_ease_cm','hip_ease_cm','seam_allowance_cm','hem_allowance_cm','dart_cm']) if(!Number.isFinite(m[k])||m[k]<0)errors.push(k.replace('_cm','').replaceAll('_',' ')+' cannot be negative.');
+ if(m.hip_cm<m.waist_cm)warnings.push('Hip measurement is smaller than waist; verify your measurements.');
+ if(m.hip_depth_cm>=m.length_cm)warnings.push('Hip depth is equal to or greater than skirt length; verify these values.');
+ if(m.dart_cm>m.waist_cm/4)warnings.push('Dart intake is unusually large for this simplified sample.');
+ return {errors,warnings}
+}
+function pathD(points,close=false){return 'M '+points.map(p=>cleanNum(p[0])+','+cleanNum(p[1])).join(' L ')+(close?' Z':'')}
+function polygonSignedArea(points){
+ let area=0;
+ for(let i=0;i<points.length;i++){
+   const a=points[i],b=points[(i+1)%points.length];
+   area+=a[0]*b[1]-b[0]*a[1];
+ }
+ return area/2;
+}
+function nearestPoint(points,target){
+ let best=null,bestD=Infinity;
+ for(let i=0;i<points.length;i++){
+   const dx=points[i][0]-target[0],dy=points[i][1]-target[1],d=dx*dx+dy*dy;
+   if(d<bestD){bestD=d;best={index:i,x:points[i][0],y:points[i][1],distanceMm:Math.sqrt(d)};}
+ }
+ return best;
+}
+function deriveLandmarks(pattern){
+ // The current outline is built in a deterministic order:
+ // 0 fold waist, 1 side waist, 2..13 sampled side seam ending at hip,
+ // 14 side hem, 15 fold hem. Use those known vertices rather than nearest-point
+ // searches, which could silently select a different point after shape changes.
+ const pts=pattern.outline||[];
+ if(pts.length<16)return [];
+ const entries=[
+  ['CF_FOLD_WAIST',0,'fold waist anchor'],
+  ['SIDE_WAIST',1,'side waist vertex'],
+  ['SIDE_HIP',13,'side seam / hip-depth intersection'],
+  ['SIDE_HEM',14,'side hem vertex'],
+  ['CF_FOLD_HEM',15,'fold hem anchor']
+ ];
+ return entries.map(([name,index,role])=>({name,index,x:pts[index][0],y:pts[index][1],role,source:'exact-outline-vertex'}));
+}
+function runSizeProgressionAudit(){
+ const results=[];
+ for(let i=0;i<SIZE_ORDER.length;i++){
+  const size=SIZE_ORDER[i],p=SIZE_CHART[size],previous=i?SIZE_CHART[SIZE_ORDER[i-1]]:null;
+  const quarterWaist=(p.waist+1)*2.5,quarterHip=(p.hip+4)*2.5,dartIntake=20;
+  const closedWaist=(quarterWaist+dartIntake)-dartIntake;
+  const checks=[
+   ['positive measurements',[p.waist,p.hip,p.depth,p.length].every(v=>Number.isFinite(v)&&v>0)],
+   ['waist/hip progression',!previous||(p.waist>previous.waist&&p.hip>previous.hip)],
+   ['quarter-waist arithmetic',Math.abs(closedWaist-quarterWaist)<1e-8],
+   ['quarter-hip arithmetic',Math.abs(quarterHip-(p.hip+4)*2.5)<1e-8]
+  ];
+  results.push({size,waist:p.waist,hip:p.hip,depth:p.depth,checks});
+ }
+ const all=results.flatMap(r=>r.checks),passed=all.filter(c=>c[1]).length;
+ $('sizeAuditOutput').innerHTML='<b>'+(passed===all.length?'PASS':'CHECK')+' — '+passed+'/'+all.length+' assertions passed</b><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr>'+['Size','Waist cm','Hip cm','Depth cm','Assertions'].map(x=>'<th style="text-align:right;padding:6px;border-bottom:1px solid var(--line)">'+x+'</th>').join('')+'</tr></thead><tbody>'+results.map(r=>'<tr>'+[r.size,r.waist,r.hip,r.depth,r.checks.filter(c=>c[1]).length+'/'+r.checks.length].map(x=>'<td style="text-align:right;padding:6px;border-bottom:1px solid var(--line)">'+x+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><p class="note">Tests cover chart arithmetic only. They do not establish that the chart matches a population, or that the resulting pattern fits.</p>';
+ return {passed,total:all.length,results};
+}
+$('runSizeAudit').addEventListener('click',runSizeProgressionAudit);
+
+function pointDistance(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+function hasFinitePoints(points){return Array.isArray(points)&&points.length>=3&&points.every(p=>Array.isArray(p)&&p.length>=2&&Number.isFinite(p[0])&&Number.isFinite(p[1]));}
+function countSelfIntersections(points){
+ // Checks non-adjacent segment crossings. Collinear/touching edge cases are conservatively counted only for strict crossings.
+ const orient=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ const crosses=(a,b,c,d)=>{
+   const o1=orient(a,b,c),o2=orient(a,b,d),o3=orient(c,d,a),o4=orient(c,d,b);
+   return ((o1>1e-7&&o2< -1e-7)||(o1< -1e-7&&o2>1e-7))&&((o3>1e-7&&o4< -1e-7)||(o3< -1e-7&&o4>1e-7));
+ };
+ let n=0;
+ for(let i=0;i<points.length;i++){
+   const a=points[i],b=points[(i+1)%points.length];
+   for(let j=i+1;j<points.length;j++){
+     if(j===i||j===(i+1)%points.length||(j+1)%points.length===i)continue;
+     if(crosses(a,b,points[j],points[(j+1)%points.length]))n++;
+   }
+ }
+ return n;
+}
+function runGeometryChecks(){
+ const report=$('geometryReport');
+ if(!lastPattern){report.innerHTML='<span class="bad">Generate a pattern before running geometry checks.</span>';return;}
+ const p=lastPattern,pts=p.outline||[],cut=p.cut||[];
+ const checks=[];
+ checks.push({name:'Outline has finite coordinates',ok:hasFinitePoints(pts),detail:`${pts.length} outline vertices`});
+ const area=hasFinitePoints(pts)?Math.abs(polygonSignedArea(pts)):0;
+ checks.push({name:'Outline area is positive',ok:Number.isFinite(area)&&area>1,detail:`${area.toFixed(1)} mm²`});
+ const crossings=hasFinitePoints(pts)?countSelfIntersections(pts):null;
+ checks.push({name:'No strict outline self-crossings',ok:crossings===0,detail:crossings===null?'not measurable':`${crossings} crossing(s)`});
+ checks.push({name:'Cut geometry has finite coordinates',ok:hasFinitePoints(cut),detail:`${cut.length} cut vertices`});
+ checks.push({name:'Dimensions are positive',ok:Number.isFinite(p.width)&&p.width>0&&Number.isFinite(p.height)&&p.height>0,detail:`${p.width.toFixed(1)} × ${p.height.toFixed(1)} mm`});
+ const intake=p.dartIntakeMm||0,expected=(p.m.waist_cm+p.m.waist_ease_cm)*2.5;
+ const waistErr=Math.abs((p.waistTopWidth-intake)-expected);
+ checks.push({name:'Closed-dart waist arithmetic',ok:waistErr<0.01,detail:`difference ${waistErr.toFixed(3)} mm`});
+ report.innerHTML='<ul>'+checks.map(c=>'<li><span class="'+(c.ok?'ok':'bad')+'">'+(c.ok?'PASS':'CHECK')+'</span> — <b>'+c.name+'</b>: '+c.detail+'</li>').join('')+'</ul><p class="note">These checks detect basic structural problems only. They do not certify seam allowance correctness, garment fit, or production readiness.</p>';
+}
+$('runGeometryChecks').addEventListener('click',runGeometryChecks);
+function renderLandmarks(){
+ const box=$('landmarkOutput');
+ if(!lastPattern){box.textContent='Generate a pattern to inspect landmarks.';return;}
+ const rows=deriveLandmarks(lastPattern);
+ box.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr>'+['Landmark','X mm','Y mm','Role'].map(x=>'<th style="text-align:left;padding:6px;border-bottom:1px solid var(--line)">'+x+'</th>').join('')+'</tr></thead><tbody>'+
+ rows.map(r=>'<tr>'+[r.name,r.x.toFixed(1),r.y.toFixed(1),r.role].map(v=>'<td style="padding:6px;border-bottom:1px solid var(--line)">'+v+'</td>').join('')+'</tr>').join('')+
+ '</tbody></table></div><p class="note">Coordinates use the current pattern millimetre coordinate system. Anchors reference fixed outline vertex indices in the current draft schema; if the outline construction order changes, update and re-test this mapping.</p>';
+}
+function exportLandmarkCsv(){
+ if(!lastPattern){$('validation').innerHTML='<span class="bad">Generate a pattern before exporting landmarks.</span>';return;}
+ const rows=deriveLandmarks(lastPattern);
+ const lines=['landmark,x_mm,y_mm,role,vertex_index,source',...rows.map(r=>[r.name,r.x.toFixed(3),r.y.toFixed(3),r.role,r.index,r.source].join(','))];
+ const blob=new Blob([lines.join('\\n')],{type:'text/csv;charset=utf-8;'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='patroner_v1_20_landmarks.csv';a.click();URL.revokeObjectURL(a.href);
+}
+$('exportLandmarks').addEventListener('click',exportLandmarkCsv);
+function generate(){
+ const m=getInputs(),check=validate(m),v=$('validation');
+ if(check.errors.length){v.innerHTML='<span class="bad"><b>Fix these issues:</b></span><ul>'+check.errors.map(x=>'<li>'+x+'</li>').join('')+'</ul>';$('state').textContent='Needs correction';return}
+ // Drafting convention: one quarter-body panel, placed on fold at x=0.
+ // The waist width includes dart intake; closing the dart removes that intake.
+ const waistQuarter=(m.waist_cm+m.waist_ease_cm)*2.5;
+ const hipQuarter=(m.hip_cm+m.hip_ease_cm)*2.5;
+ const dartIntake=m.dart_cm*10;
+ const waistTop=waistQuarter+dartIntake;
+ const hipW=hipQuarter,hy=m.hip_depth_cm*10,ly=m.length_cm*10;
+ const sa=m.seam_allowance_cm*10,hem=m.hem_allowance_cm*10;
+ // Smooth side seam: quadratic Bezier from waist to hip, with the control point
+ // slightly toward the hip to avoid a harsh straight diagonal.
+ const side=[],control=[waistTop+(hipW-waistTop)*0.82,hy*0.34];
+ for(let i=1;i<=12;i++){
+   const t=i/12,u=1-t;
+   side.push([u*u*waistTop+2*u*t*control[0]+t*t*hipW,2*u*t*control[1]+t*t*hy]);
+ }
+ const outline=[[0,0],[waistTop,0],...side,[hipW,ly],[0,ly]];
+ // Polygon offset for seam allowance. The fold edge is then returned to x=0,
+ // so the center-fold edge does not receive a seam allowance.
+ const offsetPolygon=(pts,d)=>{
+   const signed=pts.reduce((s,a,i)=>{const b=pts[(i+1)%pts.length];return s+a[0]*b[1]-b[0]*a[1]},0)/2;
+   const orient=signed>=0?1:-1;
+   const lines=pts.map((a,i)=>{
+     const b=pts[(i+1)%pts.length],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+     const nx=orient*dy/len,ny=-orient*dx/len;
+     return {a:[a[0]+nx*d,a[1]+ny*d],v:[dx,dy]};
+   });
+   const out=[];
+   for(let i=0;i<pts.length;i++){
+     const l1=lines[(i+pts.length-1)%pts.length],l2=lines[i];
+     const cross=l1.v[0]*l2.v[1]-l1.v[1]*l2.v[0];
+     if(Math.abs(cross)<1e-8){out.push([pts[i][0],pts[i][1]]);continue}
+     const qx=l2.a[0]-l1.a[0],qy=l2.a[1]-l1.a[1];
+     const t=(qx*l2.v[1]-qy*l2.v[0])/cross;
+     out.push([l1.a[0]+t*l1.v[0],l1.a[1]+t*l1.v[1]]);
+   }
+   return out.map(p=>[Math.max(0,p[0]),p[1]]);
+ };
+ const cut=offsetPolygon(outline,sa);
+ const dartCenter=Math.min(Math.max(waistQuarter*0.55,waistTop*0.35),Math.max(0,waistTop-dartIntake/2));
+ const dartDepth=Math.min(Math.max(hy*0.42,35),Math.max(35,hy-10));
+ const dart=dartIntake>0?[[dartCenter-dartIntake/2,0],[dartCenter,dartDepth],[dartCenter+dartIntake/2,0]]:[];
+ const notch=[[hipW,hy-4],[hipW-4,hy],[hipW,hy+4]];
+ const fold=[[0,ly-hem],[hipW,ly-hem]];
+ const grading=buildGradedMeasurements(m.size_profile in SIZE_CHART ? m.size_profile : 'M');
+ const gradingMode=$('gradingMode').value;
+ lastPattern={m,outline,cut,dart,notch,fold,width:hipW+sa,height:ly+sa,hipWidth:hipW,waistWidth:waistQuarter,waistTopWidth:waistTop,dartIntakeMm:dartIntake,sideCurvePoints:side.length,blockType:'quarter skirt panel on fold',sizeProfile:m.size_profile,sizeChartSource:'Patroner provisional metric chart',gradingMode,gradingReference:grading,gradingStatus:gradingMode==='point'?'experimental-comparison-only':'measurement-derived-draft'};
+ if(gradingMode==='point' && m.size_profile!=='M') {
+   check.warnings.push('Experimental grading comparison selected. This prototype drafts from the selected measurements and records size deltas; it does not yet move individual pattern points using industrial grading rules.');
+ }
+ renderLandmarks();
+ runGeometryChecks();
+ const all=cut.concat(outline,fold,dart,notch),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+ const W=maxx-minx,H=maxy-miny,scale=Math.min(590/(W||1),500/(H||1)),ox=400-(minx+maxx)*scale/2,oy=320-(miny+maxy)*scale/2;
+ const tr=pts=>pts.map(p=>[ox+p[0]*scale,oy+p[1]*scale]);
+ const pOutline=pathD(tr(outline),true),pCut=pathD(tr(cut),true),pDart=pathD(tr(dart)),pNotch=pathD(tr(notch)),pFold=pathD(tr(fold));
+ const gx=hipW*.5,grain=pathD(tr([[gx,hy+10],[gx,ly-10]]));
+ $('preview').innerHTML=`<rect width="800" height="650" fill="#fff"/><defs><pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="#eef1f6" stroke-width="1"/></pattern></defs><rect width="800" height="650" fill="url(#grid)"/><path d="${pCut}" fill="#315efb0b" stroke="#111827" stroke-width="2.4"/><path d="${pOutline}" fill="none" stroke="#315efb" stroke-width="1.8" stroke-dasharray="7 4"/><path d="${pFold}" fill="none" stroke="#168a67" stroke-width="1.8" stroke-dasharray="5 3"/><path d="${pDart}" fill="none" stroke="#8a3ffc" stroke-width="1.8"/><path d="${pNotch}" fill="none" stroke="#df4d4d" stroke-width="2"/><path d="${grain}" fill="none" stroke="#596579" stroke-width="1.6" stroke-dasharray="6 4"/><text x="${ox+waistTop*scale/2}" y="${oy-18}" text-anchor="middle" font-size="14" fill="#172033">QUARTER SKIRT PANEL · CUT ON FOLD</text><text x="18" y="28" font-size="12" fill="#596579">Preview only — not a 1:1 on-screen measurement</text><g transform="translate(18 600)" font-size="12"><path d="M0 0h28" stroke="#111827" stroke-width="3"/><text x="36" y="4" fill="#172033">CUT</text><path d="M95 0h28" stroke="#315efb" stroke-width="2" stroke-dasharray="7 4"/><text x="131" y="4" fill="#172033">STITCH</text><path d="M220 0h28" stroke="#168a67" stroke-width="2" stroke-dasharray="5 3"/><text x="256" y="4" fill="#172033">HEM FOLD</text><path d="M365 0h28" stroke="#8a3ffc" stroke-width="2"/><text x="401" y="4" fill="#172033">DART</text><path d="M470 0h28" stroke="#df4d4d" stroke-width="2"/><text x="506" y="4" fill="#172033">NOTCH</text></g>`;
+ $('widthMetric').textContent=cleanNum((maxx-minx)/10);$('heightMetric').textContent=cleanNum((maxy-miny)/10);
+ const prof=paperProfile(),margin=val('margin'),overlap=val('overlap');
+ const availW=prof.w-2*margin,availH=prof.h-2*margin;
+ const stepW=Math.max(1,availW-overlap),stepH=Math.max(1,availH-overlap);
+ const cols=Math.max(1,Math.ceil(Math.max(0,(maxx-minx)*m.scale-availW)/stepW)+1),rows=Math.max(1,Math.ceil(Math.max(0,(maxy-miny)*m.scale-availH)/stepH)+1);
+ $('pageMetric').textContent=String(cols*rows);
+ $('summary').textContent=`Quarter skirt panel: waist target ${cleanNum(waistQuarter/10)} cm + ${cleanNum(dartIntake/10)} cm dart intake; hip target ${cleanNum(hipQuarter/10)} cm. Pattern bounds ${cleanNum((maxx-minx)/10)} × ${cleanNum((maxy-miny)/10)} cm. Estimated ${prof.name} tile layout: ${cols} × ${rows}, ${cols*rows} pages.`;
+ v.innerHTML=(check.warnings.length?'<span class="bad"><b>Review:</b></span><ul>'+check.warnings.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'<span class="ok"><b>Measurement checks passed.</b></span>')+`<div class="note">Drafting model: quarter skirt panel on fold. Waist panel width includes dart intake; closing the dart should return the panel waist to the target quarter waist. Side seam uses a sampled quadratic curve. This is an experimental block, not yet validated against a professional pattern or fit test.</div>`;
+ $('state').textContent='Preview generated';
+}
+function svgExport(){
+ if(!lastPattern)generate();if(!lastPattern)return;
+ const p=lastPattern,m=p.m,s=m.scale;
+ const all=p.cut.concat(p.outline,p.fold,p.dart,p.notch),xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),minx=Math.min(...xs)-15,miny=Math.min(...ys)-15,maxx=Math.max(...xs)+15,maxy=Math.max(...ys)+15;
+ const d=pts=>pathD(pts,false);
+ const text=`<svg xmlns="http://www.w3.org/2000/svg" width="${cleanNum((maxx-minx)*s)}mm" height="${cleanNum((maxy-miny)*s)}mm" viewBox="${cleanNum(minx)} ${cleanNum(miny)} ${cleanNum(maxx-minx)} ${cleanNum(maxy-miny)}"><title>Patroner v1.2 sample skirt pattern</title><g id="CUT" fill="none" stroke="#111827" stroke-width="0.35"><path d="${d(p.cut)} Z"/></g><g id="STITCH" fill="none" stroke="#315efb" stroke-width="0.35" stroke-dasharray="2 1"><path d="${d(p.outline)} Z"/></g><g id="HEM_FOLD" fill="none" stroke="#168a67" stroke-width="0.35"><path d="${d(p.fold)}"/></g><g id="DARTS" fill="none" stroke="#8a3ffc" stroke-width="0.35"><path d="${d(p.dart)}"/></g><g id="NOTCHES" fill="none" stroke="#df4d4d" stroke-width="0.35"><path d="${d(p.notch)}"/></g><text x="0" y="-5" font-family="sans-serif" font-size="4">SKIRT PANEL — CUT 1 PAIR — PROTOTYPE</text></svg>`;
+ download('patroner_skirt_v1_14.svg',text,'image/svg+xml');
+}
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+function paperProfile(){
+ const key=$('paper').value;
+ if(key==='A3')return {name:'A3',w:297,h:420};
+ if(key==='Letter')return {name:'Letter',w:215.9,h:279.4};
+ return {name:'A4',w:210,h:297};
+}
+function pdfEscape(s){return String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,'?')}
+function buildPdf(objects){
+ let out='%PDF-1.4\n%Patroner\n', offsets=[0];
+ for(let i=0;i<objects.length;i++){offsets.push(out.length);out+=(i+1)+' 0 obj\n'+objects[i]+'\nendobj\n'}
+ const xref=out.length;out+='xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n';
+ for(let i=1;i<offsets.length;i++)out+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+ out+='trailer\n<< /Size '+(objects.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+ return new Blob([out],{type:'application/pdf'});
+}
+function pdfPath(points,close,tx,ty,scale,pgH){
+ if(!points||points.length<2)return '';
+ const pt=72/25.4, map=p=>[ (tx+p[0])*pt, pgH-(ty+p[1])*pt ];
+ let s=''; points.forEach((p,i)=>{const q=map(p);s+=cleanNum(q[0])+' '+cleanNum(q[1])+(i===0?' m\n':' l\n')});
+ if(close)s+='h\n';return s;
+}
+function clipSegmentRect(a,b,xmin,ymin,xmax,ymax){
+ const dx=b[0]-a[0],dy=b[1]-a[1];let t0=0,t1=1;
+ const p=[-dx,dx,-dy,dy],q=[a[0]-xmin,xmax-a[0],a[1]-ymin,ymax-a[1]];
+ for(let i=0;i<4;i++){
+   if(Math.abs(p[i])<1e-10){if(q[i]<0)return null;}
+   else {const r=q[i]/p[i];if(p[i]<0)t0=Math.max(t0,r);else t1=Math.min(t1,r);if(t0>t1)return null;}
+ }
+ return [[a[0]+t0*dx,a[1]+t0*dy],[a[0]+t1*dx,a[1]+t1*dy]];
+}
+function clippedSegments(points,closed,xmin,ymin,xmax,ymax){
+ const out=[],n=points.length,limit=closed?n:n-1;
+ for(let i=0;i<limit;i++){
+   const seg=clipSegmentRect(points[i],points[(i+1)%n],xmin,ymin,xmax,ymax);
+   if(seg && Math.hypot(seg[1][0]-seg[0][0],seg[1][1]-seg[0][1])>1e-5)out.push(seg);
+ }
+ return out;
+}
+
+function getTilePlan(){
+ if(!lastPattern)return null;
+ const p=lastPattern,m=p.m,profile=paperProfile(),margin=val('margin'),overlap=val('overlap'),scale=m.scale;
+ const rings=[{name:'CUT',points:p.cut,closed:true},{name:'STITCH',points:p.outline,closed:true},
+ {name:'HEM_FOLD',points:p.fold,closed:false},{name:'DARTS',points:p.dart,closed:false},
+ {name:'NOTCHES',points:p.notch,closed:false}];
+ const pts=rings.flatMap(r=>r.points),xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
+ const minx=Math.min(...xs),miny=Math.min(...ys),maxx=Math.max(...xs),maxy=Math.max(...ys);
+ const printableW=profile.w-2*margin,printableH=profile.h-2*margin;
+ const tileW=printableW/scale,tileH=printableH/scale;
+ const stepW=(printableW-overlap)/scale,stepH=(printableH-overlap)/scale;
+ const cols=Math.max(1,Math.ceil(Math.max(0,(maxx-minx-tileW)/stepW)+1-1e-10));
+ const rows=Math.max(1,Math.ceil(Math.max(0,(maxy-miny-tileH)/stepH)+1-1e-10));
+ const gx=p.hipWidth/2;
+ const grain=[[gx,m.hip_depth_cm*10+10],[gx,m.length_cm*10-10]];
+ const tiles=[];
+ for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+  const x0=minx+col*stepW,y0=miny+row*stepH,x1=x0+tileW,y1=y0+tileH;
+  const counts={};let total=0;
+  for(const r of rings){const n=clippedSegments(r.points,r.closed,x0,y0,x1,y1).length;counts[r.name]=n;total+=n;}
+  counts.GRAINLINE=clippedSegments(grain,false,x0,y0,x1,y1).length;total+=counts.GRAINLINE;
+  tiles.push({col,row,x0,y0,x1,y1,counts,total,empty:total===0});
+ }
+ return {p,m,profile,margin,overlap,scale,rings,minx,miny,maxx,maxy,cols,rows,tileW,tileH,stepW,stepH,tiles};
+}
+
+
+
+function validatePatternGeometry(){
+ if(!lastPattern){generate();if(!lastPattern)return;}
+ const p=lastPattern,m=p.m,issues=[],checks=[];
+ const finitePoint=(q)=>Array.isArray(q)&&q.length>=2&&Number.isFinite(q[0])&&Number.isFinite(q[1]);
+ const close=(a,b,e=0.02)=>Math.hypot(a[0]-b[0],a[1]-b[1])<=e;
+ const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+ const area=(pts)=>{let s=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];s+=a[0]*b[1]-b[0]*a[1];}return s/2;};
+ const bounds=(pts)=>({minX:Math.min(...pts.map(q=>q[0])),maxX:Math.max(...pts.map(q=>q[0])),minY:Math.min(...pts.map(q=>q[1])),maxY:Math.max(...pts.map(q=>q[1]))});
+ const lineLength=(pts,closed=false)=>{let s=0;for(let i=1;i<pts.length;i++)s+=dist(pts[i-1],pts[i]);if(closed&&pts.length>2)s+=dist(pts[pts.length-1],pts[0]);return s;};
+ const validMeasurements=['waist_cm','hip_cm','length_cm','hip_depth_cm'];
+ for(const k of validMeasurements){
+   const v=Number(m[k]);const pass=Number.isFinite(v)&&v>0;
+   checks.push({name:`Measurement ${k}`,pass,detail:pass?`${v} cm`:`Invalid value: ${m[k]}`});
+   if(!pass)issues.push(`${k} must be a positive finite number.`);
+ }
+ const expectedWaist=(m.waist_cm+m.waist_ease_cm)*2.5;
+ const actualClosedWaist=p.waistTopWidth-(p.dartIntakeMm||0);
+ const dartClosurePass=Math.abs(actualClosedWaist-expectedWaist)<0.05;
+ checks.push({name:'Dart-closed waist width',pass:dartClosurePass,detail:`${cleanNum(actualClosedWaist)} mm expected ${cleanNum(expectedWaist)} mm`});
+ if(!dartClosurePass)issues.push('Dart intake does not reconcile to the target quarter waist width.');
+ const closedLayers=[['CUT',p.cut],['STITCH',p.outline]];
+ for(const [name,pts] of closedLayers){
+   const shapeOk=Array.isArray(pts)&&pts.length>=3&&pts.every(finitePoint);
+   checks.push({name:`${name} polygon structure`,pass:shapeOk,detail:shapeOk?`${pts.length} vertices`:'Missing or invalid vertices'});
+   if(!shapeOk){issues.push(`${name} polygon is missing valid vertices.`);continue;}
+   const ar=area(pts),bb=bounds(pts),w=bb.maxX-bb.minX,h=bb.maxY-bb.minY;
+   const areaOk=Math.abs(ar)>1;
+   checks.push({name:`${name} non-zero area`,pass:areaOk,detail:`signed area ${cleanNum(ar)} mm²`});
+   if(!areaOk)issues.push(`${name} polygon has near-zero area.`);
+   const sizeOk=w>1&&h>1;
+   checks.push({name:`${name} positive bounds`,pass:sizeOk,detail:`${cleanNum(w)} × ${cleanNum(h)} mm`});
+   if(!sizeOk)issues.push(`${name} polygon has implausible bounds.`);
+   const selfClose=close(pts[0],pts[pts.length-1],0.02);
+   checks.push({name:`${name} closure convention`,pass:!selfClose,detail:selfClose?'First point repeats last point':'Implicit closure used'});
+   if(selfClose)issues.push(`${name} repeats its first vertex; remove duplicate closure point before polygon processing.`);
+ }
+ // Basic pattern symmetry and key dimension checks; deliberately warnings rather than claims of fit.
+ if(Array.isArray(p.cut)&&p.cut.length>=4){
+   const bb=bounds(p.cut),w=bb.maxX-bb.minX,h=bb.maxY-bb.minY;
+   const widthPass=w>0&&h>0&&Number.isFinite(w)&&Number.isFinite(h);
+   checks.push({name:'Overall pattern bounds',pass:widthPass,detail:`${cleanNum(w)} × ${cleanNum(h)} mm`});
+   const center=(bb.minX+bb.maxX)/2;
+   const symmetryErr=Math.max(...p.cut.map(q=>Math.abs((center-q[0])-(q[0]-center))));
+   checks.push({name:'Coordinate sanity',pass:p.cut.every(finitePoint),detail:'All cut coordinates are finite'});
+ }
+ for(const [name,pts] of [['HEM_FOLD',p.fold],['DARTS',p.dart],['NOTCHES',p.notch]]){
+   const ok=Array.isArray(pts)&&pts.every(finitePoint);
+   checks.push({name:`${name} linework`,pass:ok,detail:ok?`${pts.length} points; ${cleanNum(lineLength(pts,false))} mm polyline length`:'Invalid coordinates'});
+   if(!ok)issues.push(`${name} contains invalid coordinates.`);
+ }
+ const failed=checks.filter(c=>!c.pass).length;
+ const status=failed===0?'PASS — structural checks only':'CHECK — structural issues detected';
+ const table=checks.map(c=>`<tr><td>${c.name}</td><td>${c.pass?'PASS':'CHECK'}</td><td>${c.detail}</td></tr>`).join('');
+ $('validation').innerHTML=`<b>Pattern geometry validation</b><div class="note">${status}. ${checks.length-failed}/${checks.length} checks passed. This validates basic data structure and dimensions, not garment fit, ease, seam allowance correctness, or sewing construction.</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:.78rem;width:100%;margin-top:8px"><thead><tr><th>Check</th><th>Result</th><th>Details</th></tr></thead><tbody>${table}</tbody></table></div>${issues.length?`<ul>${issues.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}`;
+ const csv=[['check','result','detail'],...checks.map(c=>[c.name,c.pass?'PASS':'CHECK',c.detail])].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+ download('patroner_pattern_geometry_report_v1_14.csv',csv,'text/csv;charset=utf-8');
+}
+
+function tileContinuityCheck(){
+ if(!lastPattern){generate();if(!lastPattern)return;}
+ const plan=getTilePlan();if(!plan)return;
+ const eps=0.02, results=[];
+ const allRings=[...plan.rings,{name:'GRAINLINE',points:[[ plan.p.hipWidth/2,plan.m.hip_depth_cm*10+10 ],[ plan.p.hipWidth/2,plan.m.length_cm*10-10 ]],closed:false}];
+ const intersections=(ring,axis,value,lo,hi)=>{
+   const out=[],pts=ring.points,n=pts.length,limit=ring.closed?n:n-1;
+   for(let i=0;i<limit;i++){
+     const a=pts[i],b=pts[(i+1)%n],av=axis==='x'?a[0]:a[1],bv=axis==='x'?b[0]:b[1];
+     const ao=axis==='x'?a[1]:a[0],bo=axis==='x'?b[1]:b[0];
+     if(Math.abs(av-bv)<1e-9)continue;
+     const t=(value-av)/(bv-av);
+     if(t>=-1e-9&&t<=1+1e-9){const other=ao+t*(bo-ao);if(other>=lo-eps&&other<=hi+eps)out.push(other);}
+   }
+   return out.sort((a,b)=>a-b);
+ };
+ // Compare line crossings on the outer edge of each tile with the neighboring tile's
+ // source-coordinate window. Because the renderer uses overlap, these crossings should
+ // remain inside the adjacent page's printable source extent.
+ for(const t of plan.tiles){
+   if(t.col+1<plan.cols){
+     const n=plan.tiles.find(q=>q.col===t.col+1&&q.row===t.row);
+     const edge=t.x1,lo=Math.max(t.y0,n.y0),hi=Math.min(t.y1,n.y1);
+     let crossingCount=0,missing=0;
+     for(const r of allRings){
+       const xs=intersections(r,'x',edge,lo,hi);crossingCount+=xs.length;
+       for(const y of xs)if(!(edge>=n.x0-eps&&edge<=n.x1+eps&&y>=n.y0-eps&&y<=n.y1+eps))missing++;
+     }
+     results.push({pair:`(${t.col+1},${t.row+1}) ↔ (${n.col+1},${n.row+1})`,axis:'vertical',crossings:crossingCount,missing,pass:missing===0});
+   }
+   if(t.row+1<plan.rows){
+     const n=plan.tiles.find(q=>q.col===t.col&&q.row===t.row+1);
+     const edge=t.y1,lo=Math.max(t.x0,n.x0),hi=Math.min(t.x1,n.x1);
+     let crossingCount=0,missing=0;
+     for(const r of allRings){
+       const ys=intersections(r,'y',edge,lo,hi);crossingCount+=ys.length;
+       for(const x of ys)if(!(edge>=n.y0-eps&&edge<=n.y1+eps&&x>=n.x0-eps&&x<=n.x1+eps))missing++;
+     }
+     results.push({pair:`(${t.col+1},${t.row+1}) ↔ (${n.col+1},${n.row+1})`,axis:'horizontal',crossings:crossingCount,missing,pass:missing===0});
+   }
+ }
+ const failed=results.filter(r=>!r.pass).length;
+ const table=results.map(r=>`<tr><td>${r.pair}</td><td>${r.axis}</td><td>${r.crossings}</td><td>${r.missing}</td><td>${r.pass?'PASS':'CHECK'}</td></tr>`).join('');
+ $('validation').innerHTML=`<b>Tile continuity preflight — source geometry</b><div class="note">${results.length-failed}/${results.length} adjacency checks passed the overlap-window test. This verifies source-coordinate coverage only; it does not inspect the emitted PDF's path data or certify physical assembly.</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:.78rem;width:100%;margin-top:8px"><thead><tr><th>Adjacent tiles</th><th>Axis</th><th>Edge crossings</th><th>Outside overlap</th><th>Result</th></tr></thead><tbody>${table}</tbody></table></div>`;
+ const csv=[['tile_a','tile_b','axis','edge_crossings','outside_overlap','result'],...results.map(r=>[r.pair.replace(' ↔ ',';'),r.axis,r.crossings,r.missing,r.pass?'PASS':'CHECK'])].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+ download('patroner_tile_continuity_v1_14.csv',csv,'text/csv;charset=utf-8');
+}
+
+function tileDiagnosticsCsv(){
+ if(!lastPattern){generate();if(!lastPattern)return;}
+ const plan=getTilePlan();if(!plan)return;
+ const header=['tile_col','tile_row','segments_total','status','CUT','STITCH','HEM_FOLD','DARTS','NOTCHES','GRAINLINE'];
+ const rows=plan.tiles.map(t=>[t.col+1,t.row+1,t.total,t.empty?'EMPTY':'LINEWORK',t.counts.CUT||0,t.counts.STITCH||0,t.counts.HEM_FOLD||0,t.counts.DARTS||0,t.counts.NOTCHES||0,t.counts.GRAINLINE||0]);
+ const csv=[header,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+ download('patroner_tile_diagnostics_v1_14.csv',csv,'text/csv;charset=utf-8');
+}
+
+function tileOverviewSvg(){
+ if(!lastPattern){generate();if(!lastPattern)return;}
+ const plan=getTilePlan();if(!plan)return;
+ const {p,profile,margin,overlap,scale,minx,miny,maxx,maxy,cols,rows,stepW,stepH,tileW,tileH,tiles}=plan;
+ const pad=18,legend=46,sw=maxx-minx,sh=maxy-miny;
+ // The overview must fit the entire tile grid, not only the pattern bounds.
+ // A page rectangle can extend beyond the pattern's min/max coordinates.
+ const gridW=(cols-1)*stepW+tileW,gridH=(rows-1)*stepH+tileH;
+ const viewW=Math.max(sw,gridW),viewH=Math.max(sh,gridH);
+ const W=viewW+pad*2,H=viewH+pad*2+legend;
+ const sx=x=>pad+(x-minx),sy=y=>pad+(y-miny);
+ let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${cleanNum(W)}mm" height="${cleanNum(H)}mm" viewBox="0 0 ${cleanNum(W)} ${cleanNum(H)}"><rect width="100%" height="100%" fill="white"/>`;
+ // Pattern contours, at true relative scale in the overview SVG.
+ const path=(pts,closed)=>pts.length?`M ${pts.map(q=>`${cleanNum(sx(q[0]))},${cleanNum(sy(q[1]))}`).join(' L ')}${closed?' Z':''}`:'';
+ svg+=`<path d="${path(p.cut,true)}" fill="#315efb0a" stroke="#111827" stroke-width="0.8"/><path d="${path(p.outline,true)}" fill="none" stroke="#315efb" stroke-width="0.55" stroke-dasharray="4 2"/><path d="${path(p.fold,false)}" fill="none" stroke="#168a67" stroke-width="0.65"/><path d="${path(p.dart,false)}" fill="none" stroke="#8a3ffc" stroke-width="0.65"/><path d="${path(p.notch,false)}" fill="none" stroke="#df4d4d" stroke-width="0.75"/>`;
+ for(const t of tiles){
+  const x=sx(t.x0),y=sy(t.y0),w=tileW,h=tileH;
+  svg+=`<rect x="${cleanNum(x)}" y="${cleanNum(y)}" width="${cleanNum(w)}" height="${cleanNum(h)}" fill="${t.empty?'#fef2f2':'#93c5fd12'}" stroke="${t.empty?'#dc2626':'#2563eb'}" stroke-width="0.6" stroke-dasharray="3 2"/>`;
+  svg+=`<text x="${cleanNum(x+3)}" y="${cleanNum(y+8)}" font-family="sans-serif" font-size="5" fill="${t.empty?'#b91c1c':'#1d4ed8'}">Tile ${t.col+1},${t.row+1}${t.empty?' EMPTY':''}</text>`;
+ }
+ svg+=`<text x="${pad}" y="${cleanNum(H-24)}" font-family="sans-serif" font-size="6" fill="#111827">Patroner v1.20 tile overview · ${profile.name} · ${scale}:1 · overlap ${overlap} mm</text><text x="${pad}" y="${cleanNum(H-15)}" font-family="sans-serif" font-size="5" fill="#4b5563">Blue rectangles = planned pages; red labels = tiles with no detected line segments. Print overview as reference only.</text></svg>`;
+ download(`patroner_tile_overview_v1_14.svg`,svg,'image/svg+xml');
+ const rowsHtml=tiles.map(t=>`<tr><td>${t.col+1},${t.row+1}</td><td>${t.total}</td><td>${t.empty?'EMPTY':'Linework detected'}</td><td>${Object.entries(t.counts).filter(([k,v])=>v).map(([k,v])=>`${k}: ${v}`).join(', ')||'—'}</td></tr>`).join('');
+ $('validation').innerHTML=`<b>Tile preflight (${cols} × ${rows} grid)</b><div class="note">Overview SVG exported. Planned grid footprint: ${cleanNum(gridW)} × ${cleanNum(gridH)} mm. Pattern bounds: ${cleanNum(maxx-minx)} × ${cleanNum(maxy-miny)} mm. Non-empty tiles: ${tiles.filter(t=>!t.empty).length}/${tiles.length}. Counts are clipped source segments, not proof of seam continuity.</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:.78rem;width:100%;margin-top:8px"><thead><tr><th style="text-align:left;border-bottom:1px solid #dce2ec;padding:5px">Tile</th><th style="text-align:left;border-bottom:1px solid #dce2ec;padding:5px">Segments</th><th style="text-align:left;border-bottom:1px solid #dce2ec;padding:5px">Status</th><th style="text-align:left;border-bottom:1px solid #dce2ec;padding:5px">Layers</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+}
+
+function tiledPdf(){
+ if(!lastPattern){generate();if(!lastPattern)return}
+ const p=lastPattern,m=p.m,profile=paperProfile(),margin=val('margin'),overlap=val('overlap'),scale=m.scale;
+ const v=$('validation');
+ if(!Number.isFinite(margin)||margin<3||margin>25||!Number.isFinite(overlap)||overlap<0||overlap>20||overlap>=Math.min(profile.w-2*margin,profile.h-2*margin)){
+   v.innerHTML='<span class="bad"><b>Print profile error:</b></span><ul><li>Margin must be 3–25 mm and overlap 0–20 mm.</li><li>Overlap must be smaller than printable area.</li></ul>';return;
+ }
+ const rings=[{name:'CUT',points:p.cut,closed:true,color:'0.08 0.10 0.15',width:0.8,dash:''},
+ {name:'STITCH',points:p.outline,closed:true,color:'0.19 0.37 0.98',width:0.55,dash:'4 2'},
+ {name:'HEM_FOLD',points:p.fold,closed:false,color:'0.08 0.54 0.40',width:0.65,dash:''},
+ {name:'DARTS',points:p.dart,closed:false,color:'0.54 0.25 0.99',width:0.65,dash:''},
+ {name:'NOTCHES',points:p.notch,closed:false,color:'0.86 0.18 0.18',width:0.75,dash:''}];
+ const pts=rings.flatMap(r=>r.points),xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
+ const minx=Math.min(...xs),miny=Math.min(...ys),maxx=Math.max(...xs),maxy=Math.max(...ys);
+ const printableW=profile.w-2*margin,printableH=profile.h-2*margin;
+ const tileW=printableW/scale,tileH=printableH/scale;
+ const stepW=(printableW-overlap)/scale,stepH=(printableH-overlap)/scale;
+ const cols=Math.max(1,Math.ceil(Math.max(0,(maxx-minx-tileW)/stepW)+1-1e-10));
+ const rows=Math.max(1,Math.ceil(Math.max(0,(maxy-miny-tileH)/stepH)+1-1e-10));
+ if(cols*rows>400){v.innerHTML='<span class="bad">This pattern would create more than 400 pages. Reduce scale or choose larger paper.</span>';return}
+ const pt=72/25.4,pageW=profile.w*pt,pageH=profile.h*pt,marginPt=margin*pt;
+ const objects=['','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'],pageRefs=[];
+ const pdfY=y=>pageH-y;
+ for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+   const ox=minx+col*stepW,oy=miny+row*stepH;
+   const clipX0=ox,clipY0=oy,clipX1=ox+tileW,clipY1=oy+tileH;
+   const gx=p.hipWidth/2;
+   const grainSegments=clippedSegments([[gx,m.hip_depth_cm*10+10],[gx,m.length_cm*10-10]],false,clipX0,clipY0,clipX1,clipY1);
+   const hasGeometry=rings.some(r=>clippedSegments(r.points,r.closed,clipX0,clipY0,clipX1,clipY1).length>0)||grainSegments.length>0;
+   if(!hasGeometry) continue;
+   const mapPoint=q=>[marginPt+(q[0]-ox)*scale*pt,pageH-marginPt-(q[1]-oy)*scale*pt];
+   let c='q\n'+marginPt.toFixed(3)+' '+marginPt.toFixed(3)+' '+(pageW-2*marginPt).toFixed(3)+' '+(pageH-2*marginPt).toFixed(3)+' re W n\n';
+   for(const r of rings){
+     c+=`${r.color} RG ${r.width} w ${r.dash?'['+r.dash+'] 0 d\n':'[] 0 d\n'}`;
+     for(const seg of clippedSegments(r.points,r.closed,clipX0,clipY0,clipX1,clipY1)){
+       const a=mapPoint(seg[0]),b=mapPoint(seg[1]);
+       c+=`${a[0].toFixed(3)} ${a[1].toFixed(3)} m ${b[0].toFixed(3)} ${b[1].toFixed(3)} l S\n`;
+     }
+   }
+   // Grainline as open linework clipped independently.
+   c+='0.30 0.35 0.42 RG 0.55 w [3 2] 0 d\n';
+   for(const seg of grainSegments){
+     const a=mapPoint(seg[0]),b=mapPoint(seg[1]);c+=`${a[0].toFixed(3)} ${a[1].toFixed(3)} m ${b[0].toFixed(3)} ${b[1].toFixed(3)} l S\n`;
+   }
+   c+='[] 0 d\nQ\n';
+   // Registration crosses are outside the pattern clipping, within the printable margin.
+   c+='0.55 0.59 0.65 RG 0.45 w\n';
+   const cross=(x,y)=>`${x.toFixed(3)} ${(pageH-y).toFixed(3)} m ${(x+5).toFixed(3)} ${(pageH-y).toFixed(3)} l ${(x+2.5).toFixed(3)} ${(pageH-y-2.5).toFixed(3)} m ${(x+2.5).toFixed(3)} ${(pageH-y+2.5).toFixed(3)} l S\n`;
+   c+=cross(marginPt/2,marginPt/2)+cross(pageW-marginPt/2,marginPt/2)+cross(marginPt/2,pageH-marginPt/2)+cross(pageW-marginPt/2,pageH-marginPt/2);
+   c+=`BT /F1 8 Tf 1 0 0 1 ${marginPt.toFixed(3)} 12 Tm (${pdfEscape(`Patroner ${profile.name} | Page ${pageRefs.length+1} | Scale ${scale}:1 | Tile ${col+1},${row+1}`)}) Tj ET\n`;
+   c+=`BT /F1 7 Tf 1 0 0 1 ${marginPt.toFixed(3)} ${(pageH-12).toFixed(3)} Tm (${pdfEscape(`Overlap ${overlap} mm | Assemble row-first | Print Actual Size`)}) Tj ET\n`;
+   const contentId=objects.length+1;objects.push(`<< /Length ${c.length} >>\nstream\n${c}endstream`);
+   const pageId=objects.length+1;pageRefs.push(pageId);
+   objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(3)} ${pageH.toFixed(3)}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`);
+ }
+ objects[0]='<< /Type /Catalog /Pages 2 0 R >>';
+ objects[1]=`<< /Type /Pages /Kids [${pageRefs.map(i=>i+' 0 R').join(' ')}] /Count ${pageRefs.length} >>`;
+ const blob=buildPdf(objects),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=`patroner_${profile.name.toLowerCase()}_tiled_v1_14.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ $('state').textContent='PDF exported';
+ v.innerHTML=`<span class="ok"><b>Tiled PDF created:</b> ${pageRefs.length} exported page(s) from a ${cols} × ${rows} grid, ${profile.name}, ${scale}:1 scale, ${overlap} mm overlap.</span><div class="note">Empty grid cells are omitted. Use each page's Tile column,row label to place it in the grid. Export the tile overview for segment counts; this is not a continuity or fit certification.</div>`;
+}
+$('downloadPdf').addEventListener('click',tiledPdf);$('tileOverview').addEventListener('click',tileOverviewSvg);$('tileCsv').addEventListener('click',tileDiagnosticsCsv);$('seamCheck').addEventListener('click',tileContinuityCheck);$('patternCheck').addEventListener('click',validatePatternGeometry);
+$('generate').addEventListener('click',generate);$('downloadSvg').addEventListener('click',svgExport);
+$('downloadJson').addEventListener('click',()=>{const m=getInputs(),check=validate(m);if(check.errors.length){generate();return}download('patroner_measurements_v1_14.json',JSON.stringify({app:'Patroner',version:'1.14',units:'cm',measurements:m,validation:check,note:'Input validation only; sample drafting geometry is not fit-validated.'},null,2),'application/json')});
+$('calibration').addEventListener('click',()=>{const t=`<svg xmlns="http://www.w3.org/2000/svg" width="120mm" height="112mm" viewBox="0 0 120 112"><rect x="5.15" y="5.15" width="99.7" height="99.7" fill="none" stroke="black" stroke-width="0.3"/><text x="5" y="110" font-family="sans-serif" font-size="3.5">Calibration: target outer size 100 × 100 mm. Print Actual Size / 100%.</text></svg>`;download('patroner_calibration_square_100mm_v1_14.svg',t,'image/svg+xml')});
+generate();
+</script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+from pathlib import Path
+
+content = r"""# Patroner — Architecture Baseline & Development Blueprint
+
+**Version:** 0.1  
+**Status:** Proposed engineering baseline  
+**Date:** 2026-10-31
+
+## 1. Purpose and governing architecture
+
+Patroner is an AI-powered personalized fashion engineering platform. It converts design intent, reference assets, approved body measurements, garment knowledge, and material constraints into validated pattern and production artifacts.
+
+The target is a **hybrid Python + Next.js system**:
+- **Python** is authoritative for AI-assisted interpretation, fashion knowledge, deterministic drafting, geometry, grading, simulation, validation, orchestration, provenance, and artifact production.
+- **Next.js** owns the user-facing workspace, project interaction, review, visualization, collaboration, and export flows.
+- The systems communicate through explicit, typed, versioned contracts. The frontend must not duplicate authoritative garment calculations.
+- Start modular. Split into independently deployed services only when scale, reliability, security, isolation, or team ownership demonstrates a concrete need.
+- Database, queue, object storage, graph technology, hosting, and solver choices remain open until requirements and experiments justify them.
+
+This is a proposed baseline, not a claim that these components already exist in the repository.
+
+## 2. Authority and engineering rules
+
+1. Approved user measurements are authoritative. Image-derived or AI-inferred estimates remain suggestions until explicitly reviewed and approved.
+2. Deterministic geometry and explicit constraints govern pattern coordinates, pieces, seams, allowances, notches, grainlines, and grading.
+3. AI may interpret references, propose attributes, and recommend parameters; it cannot silently override approved inputs or bypass validation.
+4. Every draft, report, simulation, and export records immutable source revisions and versioned engine/configuration identities.
+5. Visual plausibility is not production readiness. Relevant geometric, construction, material, and manufacturing checks must pass.
+6. Human approval is an explicit state transition.
+7. Failures preserve provenance and permit safe retry; partial artifacts must not be published as complete.
+
+## 3. Logical architecture
+
+### Next.js product layer
+Responsibilities: authentication-aware application shell; tenant/project workspace and revision history; design brief/reference capture; measurement entry and approval; generation submission and progress; pattern visualization; validation findings; approval workflows; production-sheet review, export, and collaboration.
+
+Non-responsibilities: authoritative drafting calculations, grading/seam geometry, model-provider secret handling, or persistence internals owned by the backend.
+
+### Python domain and computational layer
+Organize as logical modules initially:
+1. Identity/access adapter — validates principal and tenant context.
+2. Project/revision domain — immutable snapshots, dependencies, expected-head checks, audit lineage.
+3. Fashion knowledge model — garment taxonomy, construction semantics, terminology, versioned facts.
+4. Intent interpretation — structured candidate attributes, confidence, unresolved questions.
+5. Measurement domain — definitions, units, provenance, validation, approval.
+6. Recipe/constraint compiler — approved intent into inspectable drafting plan.
+7. Deterministic pattern engine — curves, darts, panels, seam topology, allowances, notches, grainlines.
+8. Grading engine — explicit size rules and measurement-derived transformations.
+9. Material/behavior model — bounded simulations and documented assumptions.
+10. Workflow orchestration — durable operation state, retries, cancellation, dependencies.
+11. Validation/evaluation — machine-readable checks, severity, evidence, release gates.
+12. Artifact production — versioned patterns, production sheets, instructions, export packages.
+13. Quality feedback — production outcomes and defect/correction records with governed learning.
+
+## 4. Canonical domain model
+
+Conceptual entities (not a database mandate):
+- Tenant, User, Membership, AccessGrant
+- FashionProject and immutable ProjectRevision
+- ReferenceAsset, DesignBrief
+- BodyProfile and MeasurementSet
+- Recipe / RecipeVersion
+- PatternDraft / PatternPiece / SeamRelation
+- MaterialSpecification, EnginePlan
+- Operation / Job, ValidationReport, SimulationRun
+- Approval, Artifact
+- ProductionEvent, Defect, CorrectiveAction, AuditEvent
+
+Use stable IDs and explicit versions. Internal dimensional calculations use centimetres unless a type declares otherwise; serialize units explicitly. Support standard XS, S, M, L, XL, XXL as a documented starting chart and custom measurements. Document chart source, measurement definitions, grading rules, and limitations. A size label is not a fit guarantee.
+
+## 5. Revision, provenance, and dependency integrity
+
+A revision records parent revision, expected project-head version, approved measurement revision, brief and reference checksums, recipe/rules, engine/model/configuration versions, material assumptions, actor, timestamp, and approvals.
+
+Revisions are immutable. Advance project head with an expected-head comparison to prevent lost updates. Derived drafts and artifacts record exact source fingerprints. Upstream changes mark affected results stale unless compatibility is proven.
+
+Long-running work uses idempotency keys and durable operation records. Retries must not duplicate approvals, exports, or production events. Artifact publishing is staged: generate, validate, then expose as complete.
+
+## 6. Typed contracts and API boundary
+
+Define language-neutral schemas for requests, responses, events, and persisted interchange. Generate or validate TypeScript and Python types from a shared schema source where practical. Contracts specify schema/version, required fields, null semantics, units/tolerances, provenance/confidence, validation, compatibility, and error/retry semantics.
+
+Illustrative routes (not final commitments):
+- `POST /api/v1/projects`; `GET /api/v1/projects/{project_id}`
+- `POST /api/v1/projects/{project_id}/revisions`
+- `POST /api/v1/projects/{project_id}/interpretations`
+- `POST /api/v1/projects/{project_id}/drafts`
+- `GET /api/v1/operations/{operation_id}`; `POST /api/v1/operations/{operation_id}/cancel`
+- `GET /api/v1/artifacts/{artifact_id}`; `POST /api/v1/approvals`
+
+Use pagination, correlation IDs, idempotency keys, and structured errors (RFC 9457 Problem Details is a candidate). Tenant identity comes from validated server-side authorization context, never an untrusted client field.
+
+## 7. Asynchronous operation lifecycle
+
+Lifecycle: `accepted → queued → running → awaiting_review → succeeded`. Other states: `failed`, `cancellation_requested`, `cancelled`, `expired`. Define legal transitions centrally and store structured stage events.
+
+Workers revalidate authorization and revision eligibility when executing. Record attempt, retry reason, timestamps, resource limits, and terminal error classification. Retry transient infrastructure failures, not invalid inputs, failed constraints, revoked access, or review rejection.
+
+## 8. Core workflows
+
+### Reference-to-pattern
+1. Create project and submit reference plus brief.
+2. Record checksum, tenant scope, and source metadata.
+3. Interpret candidate attributes, construction hypotheses, confidence, and open questions.
+4. User reviews/approves or edits interpretation.
+5. Select approved measurements or enter custom values.
+6. Compile versioned recipe/engine plan and expose assumptions.
+7. Generate deterministic geometry and piece relationships.
+8. Validate geometry, seams, allowances, notches, grainlines, construction.
+9. User reviews findings and approves eligible revision.
+10. Stage, validate, and publish artifacts.
+
+### Measurement, revision, and recovery
+The UI distinguishes standard sizes from custom values and labels estimates versus approved measurements. A photo never silently replaces a manually approved value. Changes to brief, measurement, recipe, or material assumption create a new revision and invalidate dependent outputs. Failures preserve evidence; corrected-input resubmission creates a new operation/fingerprint. Never relabel incomplete output as successful.
+
+## 9. Validation architecture
+
+Separate validators for:
+- schema/input completeness and measurement plausibility;
+- geometric validity and self-intersection;
+- seam pairing and length compatibility within declared ease/tolerance;
+- darts/construction constraints;
+- seam allowance continuity and corner handling;
+- notch placement/pairing and grainline;
+- grading monotonicity and piece topology;
+- material/behavior constraints;
+- artifact integrity and export round-trip.
+
+Each finding includes stable code, severity, message, affected entity/location, observed value, expected rule/range, evidence, and validator version. Define which findings block drafting, approval, or export. Calibrate thresholds; do not invent them.
+
+## 10. Security, privacy, and tenant boundaries
+
+Authorize every object and operation. Verify tenant scope for API, assets, artifacts, jobs, caches, search, analytics, exports, and backups. Grants are scoped and revocable; recheck at worker execution and artifact download.
+
+Keep model credentials server-side. Minimize image/body-profile retention and document purpose, retention, deletion, and provider handling. No cross-tenant model training by default. Audit grants, approvals, exports, and sensitive changes. Threat-model uploads, prompt injection in reference content, malformed model output, and resource exhaustion.
+
+## 11. Observability and quality engineering
+
+Use correlation IDs across requests, operations, and artifact lineage. Measure stage latency, queue wait, retries, validation failures, export errors, and resource consumption. Avoid logging private images, body measurements, credentials, or unnecessary personal data.
+
+Testing layers: unit; property-based geometry/grading invariants; Python/TypeScript contract; persistence/access integration; end-to-end workflows; golden pattern fixtures; load/fault injection; security and tenant isolation. Passing software tests is not proof of fit across bodies or production conditions. Validate with physical samples and documented wearer/maker feedback.
+
+## 12. Suggested repository layout
+
+```text
+apps/web/                    # Next.js product workspace
+packages/contracts/           # versioned schemas and generated clients
+services/api/                 # Python application boundary
+services/patroner/
+  domain/
+  knowledge/
+  interpretation/
+  recipes/
+  geometry/
+  drafting/
+  grading/
+  simulation/
+  validation/
+  orchestration/
+  artifacts/
+  provenance/
+tests/{unit,property,contract,integration,e2e}/
+docs/{architecture,decisions,operations}/
+```
+
+This is proposed organization. Inspect the actual repository and adopt incrementally; do not create empty layers merely to match the diagram.
+
+## 13. Ordered implementation milestones
+
+Every milestone delivers code, tests, documentation, and an inspectable demonstration. Gate dependent work on exit criteria.
+
+- **M0 — Repository foundation:** inspect current files; set formatter, lint, types, tests, environment examples, secret exclusion, CI, developer setup. Exit: clean bootstrap, CI works, no secrets committed.
+- **M1 — Contracts/domain:** schemas for project, revision, measurement, brief, draft, operation, report, approval, artifact; shared fixtures. Exit: Python and TypeScript validate same fixtures with explicit units/provenance.
+- **M2 — Revision integrity:** immutable revisions, expected-head compare-and-swap, dependency fingerprints, stale-result marking, audit. Exit: no silent concurrent overwrite; dependency changes invalidate outputs.
+- **M3 — Identity/tenant:** principal resolution, scoped objects, collaborator grants, artifact access. Exit: negative cross-tenant tests pass for all resource classes.
+- **M4 — Workspace vertical slice:** project, revisions, brief, reference upload, operation status, error UI. Exit: traceable lifecycle through UI.
+- **M5 — Measurements:** XS–XXL chart config, custom sets, definitions, units, provenance, validation, approval. Exit: no implicit AI overwrite; approved profiles immutable.
+- **M6 — AI interpretation:** server-side adapter, schema-constrained parsing, confidence/unknown fields, prompt-injection boundaries, quotas, human review. Exit: uncertain/malformed output cannot trigger production drafting directly.
+- **M7 — First deterministic garment:** choose one bounded garment family; versioned recipe and base-size draft. Exit: golden fixtures/invariants pass; reproducible inputs yield consistent outputs within tolerance.
+- **M8 — Geometry/assembly/grading:** topology, seams, allowances, notches, grainlines, documented grading. Exit: valid/invalid fixtures and grading invariants pass.
+- **M9 — Material simulation:** property sources, ranges, calibration fixtures, bounded use case. Exit: assumptions/limitations visible.
+- **M10 — Durable orchestration:** persisted operations, idempotency, retries, cancellation, recovery, authorization recheck. Exit: injected crash cannot publish partial output or duplicate side effects.
+- **M11 — Production artifacts:** linked production sheets, instructions, pattern exports, integrity manifests. Exit: exact lineage and round-trip checks.
+- **M12 — Shop-floor feedback:** events, defects, corrections, optional fit feedback under consent/provenance. Exit: attributable and controlled; no silent rule changes.
+- **M13 — Qualification:** physical samples, limits, performance/security qualification, additional garment families. Exit: each family has recipe, validation, physical evidence, release criteria.
+
+## 14. Developer walkthrough protocol
+
+For each milestone:
+1. Inspect actual repository, runtime, tests, and behavior.
+2. Run baseline tests and record existing failures.
+3. Specify contract, invariants, and acceptance tests.
+4. Implement the smallest vertical slice.
+5. Run targeted/full relevant tests, static checks, and manual workflow.
+6. Review diffs for security, provenance, errors, and scope.
+7. Record decisions, migration notes, limitations, and next entry criteria.
+8. Commit focused changes and verify SHA and changed paths.
+
+Never claim completion based only on generated code; require repository and test evidence.
+
+## 15. Deliberately open decisions
+
+Database/migrations; object storage/lifecycle; queue/broker; workflow engine versus persisted state machine; graph database versus relational dependency tables; geometry kernel; numerical solver; model providers/routing; deployment/region; observability; secrets management.
+
+Each ADR records context, alternatives, evaluation criteria, decision, consequences, security impact, migration/rollback, and revisit trigger. Do not choose infrastructure merely because it is fashionable or familiar.
+
+## 16. Architecture readiness
+
+The baseline is ready to guide implementation when responsibilities and authority boundaries are understood; contract/revision semantics are testable; security boundaries have acceptance tests; the first vertical slice has bounded garment scope; infrastructure choices have evidence plans; and every milestone has entry/exit criteria and demonstrable evidence.
+
+**Principle:** AI accelerates interpretation and assistance; verified domain rules, deterministic computation, explicit human approval, and traceable evidence govern production.
+"""
+
+path = Path("/mnt/data/PATRONER_ARCHITECTURE_BASELINE_AND_DEVELOPMENT_BLUEPRINT.md")
+path.write_text(content, encoding="utf-8")
+print(f"Created Markdown blueprint: {path.name} — {len(content.splitlines())} lines.")
